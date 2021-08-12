@@ -123,6 +123,138 @@ Lambda.array = function(it) {
 	}
 	return a;
 };
+var hxsl_Shader = function() {
+	this.priority = 0;
+	this.initialize();
+};
+$hxClasses["hxsl.Shader"] = hxsl_Shader;
+hxsl_Shader.__name__ = "hxsl.Shader";
+hxsl_Shader.prototype = {
+	initialize: function() {
+		this.constModified = true;
+		if(this.shader != null) {
+			return;
+		}
+		var cl = js_Boot.getClass(this);
+		this.shader = cl._SHADER;
+		if(this.shader == null) {
+			var curClass = cl;
+			while(curClass != null && curClass.SRC == null) curClass = curClass.__super__;
+			if(curClass == null) {
+				throw haxe_Exception.thrown(cl.__name__ + " has no shader source");
+			}
+			this.shader = curClass._SHADER;
+			if(this.shader == null) {
+				this.shader = new hxsl_SharedShader(curClass.SRC);
+				curClass._SHADER = this.shader;
+			}
+		}
+	}
+	,setPriority: function(v) {
+		this.priority = v;
+	}
+	,getParamValue: function(index) {
+		throw haxe_Exception.thrown("assert");
+	}
+	,getParamFloatValue: function(index) {
+		throw haxe_Exception.thrown("assert");
+	}
+	,updateConstants: function(globals) {
+		throw haxe_Exception.thrown("assert");
+	}
+	,updateConstantsFinal: function(globals) {
+		var c = this.shader.consts;
+		while(c != null) {
+			if(c.globalId == 0) {
+				c = c.next;
+				continue;
+			}
+			var v = globals.map.h[c.globalId];
+			var _g = c.v.type;
+			switch(_g._hx_index) {
+			case 1:
+				var v1 = v;
+				if(v1 >>> c.bits != 0) {
+					throw haxe_Exception.thrown("Constant " + c.v.name + " is outside range (" + v1 + " > " + ((1 << c.bits) - 1) + ")");
+				}
+				this.constBits |= v1 << c.pos;
+				break;
+			case 2:
+				var v2 = v;
+				if(v2) {
+					this.constBits |= 1 << c.pos;
+				}
+				break;
+			case 17:
+				var count = _g.size;
+				if(v == null) {
+					c = c.next;
+					continue;
+				}
+				var v3 = v;
+				var sel = v3.channel;
+				if(v3.texture == null) {
+					sel = hxsl_Channel.Unknown;
+				} else if(sel == null || sel == hxsl_Channel.Unknown) {
+					switch(count) {
+					case 1:
+						if(v3.texture.format == h3d_mat_Texture.nativeFormat) {
+							sel = hxsl_Channel.PackedFloat;
+						} else {
+							throw haxe_Exception.thrown("Constant " + c.v.name + " does not define channel select value");
+						}
+						break;
+					case 3:
+						if(v3.texture.format == h3d_mat_Texture.nativeFormat) {
+							sel = hxsl_Channel.PackedNormal;
+						} else {
+							throw haxe_Exception.thrown("Constant " + c.v.name + " does not define channel select value");
+						}
+						break;
+					default:
+						throw haxe_Exception.thrown("Constant " + c.v.name + " does not define channel select value");
+					}
+				}
+				this.constBits |= (globals.allocChannelID(v3.texture) << 3 | sel._hx_index) << c.pos;
+				break;
+			default:
+				throw haxe_Exception.thrown("assert");
+			}
+			c = c.next;
+		}
+		var _this = this.shader;
+		var constBits = this.constBits;
+		var i = _this.instanceCache.h[constBits];
+		this.instance = i == null ? _this.makeInstance(constBits) : i;
+	}
+	,clone: function() {
+		return this;
+	}
+	,toString: function() {
+		var c = js_Boot.getClass(this);
+		return c.__name__;
+	}
+	,__class__: hxsl_Shader
+};
+var MyShader = function() {
+	hxsl_Shader.call(this);
+};
+$hxClasses["MyShader"] = MyShader;
+MyShader.__name__ = "MyShader";
+MyShader.__super__ = hxsl_Shader;
+MyShader.prototype = $extend(hxsl_Shader.prototype,{
+	updateConstants: function(globals) {
+		this.constBits = 0;
+		this.updateConstantsFinal(globals);
+	}
+	,getParamValue: function(index) {
+		return null;
+	}
+	,getParamFloatValue: function(index) {
+		return 0.;
+	}
+	,__class__: MyShader
+});
 var h3d_IDrawable = function() { };
 $hxClasses["h3d.IDrawable"] = h3d_IDrawable;
 h3d_IDrawable.__name__ = "h3d.IDrawable";
@@ -311,7 +443,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		anim.posChanged = true;
 		anim.y = y * (this.cellSize + 1);
 		anim.alpha = 0;
-		this.world[x][y] = anim;
+		return anim;
 	}
 	,drawCreature: function(creature,x,y) {
 		var _g = 0;
@@ -429,7 +561,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 			var _g5 = this.worldDim;
 			while(_g4 < _g5) {
 				var j = _g4++;
-				_g3.push(null);
+				_g3.push(this.initCell(tiles,i,j));
 			}
 			_g.push(_g3);
 		}
@@ -449,19 +581,15 @@ Main.prototype = $extend(hxd_App.prototype,{
 			_g.push(_g3);
 		}
 		this.fateBuffer = _g;
-		var _g = 0;
-		var _g1 = this.worldDim;
-		while(_g < _g1) {
-			var i = _g++;
-			var _g2 = 0;
-			var _g3 = this.worldDim;
-			while(_g2 < _g3) {
-				var j = _g2++;
-				this.initCell(tiles,i,j);
-			}
-		}
-		this.drawCreature([[1,0,1],[0,1,1],[0,1,0]],10,10);
 		this.frameRateLabel = new h2d_Text(hxd_res_DefaultFont.get(),this.s2d);
+		var shader = new MyShader();
+		var tile = h2d_Tile.fromColor(65280,100,100);
+		var bmp = new h2d_Bitmap(tile,this.s2d);
+		bmp.posChanged = true;
+		bmp.x = 100;
+		bmp.posChanged = true;
+		bmp.y = 100;
+		bmp.addShader(shader);
 	}
 	,update: function(dt) {
 		this.frameRateLabel.set_text(Std.string(1.0 / dt));
@@ -29492,119 +29620,6 @@ h3d_pass_Blur.prototype = $extend(h3d_pass_ScreenFx.prototype,{
 	}
 	,__class__: h3d_pass_Blur
 });
-var hxsl_Shader = function() {
-	this.priority = 0;
-	this.initialize();
-};
-$hxClasses["hxsl.Shader"] = hxsl_Shader;
-hxsl_Shader.__name__ = "hxsl.Shader";
-hxsl_Shader.prototype = {
-	initialize: function() {
-		this.constModified = true;
-		if(this.shader != null) {
-			return;
-		}
-		var cl = js_Boot.getClass(this);
-		this.shader = cl._SHADER;
-		if(this.shader == null) {
-			var curClass = cl;
-			while(curClass != null && curClass.SRC == null) curClass = curClass.__super__;
-			if(curClass == null) {
-				throw haxe_Exception.thrown(cl.__name__ + " has no shader source");
-			}
-			this.shader = curClass._SHADER;
-			if(this.shader == null) {
-				this.shader = new hxsl_SharedShader(curClass.SRC);
-				curClass._SHADER = this.shader;
-			}
-		}
-	}
-	,setPriority: function(v) {
-		this.priority = v;
-	}
-	,getParamValue: function(index) {
-		throw haxe_Exception.thrown("assert");
-	}
-	,getParamFloatValue: function(index) {
-		throw haxe_Exception.thrown("assert");
-	}
-	,updateConstants: function(globals) {
-		throw haxe_Exception.thrown("assert");
-	}
-	,updateConstantsFinal: function(globals) {
-		var c = this.shader.consts;
-		while(c != null) {
-			if(c.globalId == 0) {
-				c = c.next;
-				continue;
-			}
-			var v = globals.map.h[c.globalId];
-			var _g = c.v.type;
-			switch(_g._hx_index) {
-			case 1:
-				var v1 = v;
-				if(v1 >>> c.bits != 0) {
-					throw haxe_Exception.thrown("Constant " + c.v.name + " is outside range (" + v1 + " > " + ((1 << c.bits) - 1) + ")");
-				}
-				this.constBits |= v1 << c.pos;
-				break;
-			case 2:
-				var v2 = v;
-				if(v2) {
-					this.constBits |= 1 << c.pos;
-				}
-				break;
-			case 17:
-				var count = _g.size;
-				if(v == null) {
-					c = c.next;
-					continue;
-				}
-				var v3 = v;
-				var sel = v3.channel;
-				if(v3.texture == null) {
-					sel = hxsl_Channel.Unknown;
-				} else if(sel == null || sel == hxsl_Channel.Unknown) {
-					switch(count) {
-					case 1:
-						if(v3.texture.format == h3d_mat_Texture.nativeFormat) {
-							sel = hxsl_Channel.PackedFloat;
-						} else {
-							throw haxe_Exception.thrown("Constant " + c.v.name + " does not define channel select value");
-						}
-						break;
-					case 3:
-						if(v3.texture.format == h3d_mat_Texture.nativeFormat) {
-							sel = hxsl_Channel.PackedNormal;
-						} else {
-							throw haxe_Exception.thrown("Constant " + c.v.name + " does not define channel select value");
-						}
-						break;
-					default:
-						throw haxe_Exception.thrown("Constant " + c.v.name + " does not define channel select value");
-					}
-				}
-				this.constBits |= (globals.allocChannelID(v3.texture) << 3 | sel._hx_index) << c.pos;
-				break;
-			default:
-				throw haxe_Exception.thrown("assert");
-			}
-			c = c.next;
-		}
-		var _this = this.shader;
-		var constBits = this.constBits;
-		var i = _this.instanceCache.h[constBits];
-		this.instance = i == null ? _this.makeInstance(constBits) : i;
-	}
-	,clone: function() {
-		return this;
-	}
-	,toString: function() {
-		var c = js_Boot.getClass(this);
-		return c.__name__;
-	}
-	,__class__: hxsl_Shader
-};
 var h3d_shader_ScreenShader = function() {
 	this.flipY__ = 0;
 	hxsl_Shader.call(this);
@@ -71822,6 +71837,7 @@ hx__registerFont = function(name,data) {
 	window.document.body.appendChild(div);
 };
 js_Boot.__toStr = ({ }).toString;
+MyShader.SRC = "HXSLCE15U2hhZGVyCgEFaW5wdXQNAQMCCHBvc2l0aW9uBQoBAQADAnV2BQoBAQAEBWNvbG9yBQwBAQABAAAFBm91dHB1dA0CAgYIcG9zaXRpb24FDAQFAAcFY29sb3IFDAQFAAQAAAgEdGltZQMAAAAJDnNwcml0ZVBvc2l0aW9uBQwEAAAKEGFic29sdXRlUG9zaXRpb24FDAQAAAsKcGl4ZWxDb2xvcgUMBAAADAx0ZXh0dXJlQ29sb3IFDAQAAA0MY2FsY3VsYXRlZFVWBQoDAAAODm91dHB1dFBvc2l0aW9uBQwEAAAPCGZyYWdtZW50DgYAAAEBDwAABQEGBAILBQwJAyoOBAkDAg4BBgICCAMBAwAAAAAAAABAAwMDCQMCDgEGAgIIAwEDAAAAAAAACEADAwMJAwIOAQYCAggDAQMAAAAAAAAUQAMDAwEDAAAAAAAA8D8DBQwFDAA";
 Xml.Element = 0;
 Xml.PCData = 1;
 Xml.CData = 2;
