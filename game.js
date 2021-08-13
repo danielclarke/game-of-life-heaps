@@ -538,7 +538,7 @@ Main.prototype = $extend(hxd_App.prototype,{
 		this.world[x][y].alpha = this.fateBuffer[x][y];
 	}
 	,init: function() {
-		this.updateRate = 6;
+		this.updateRate = 10;
 		this.worldDim = 50;
 		this.elapsedTime = 0;
 		this.cellSize = 10;
@@ -581,15 +581,10 @@ Main.prototype = $extend(hxd_App.prototype,{
 			_g.push(_g3);
 		}
 		this.fateBuffer = _g;
+		this.drawCreature([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],20,10);
+		this.drawCreature([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],30,10);
+		this.drawCreature([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]],40,10);
 		this.frameRateLabel = new h2d_Text(hxd_res_DefaultFont.get(),this.s2d);
-		var shader = new MyShader();
-		var tile = h2d_Tile.fromColor(65280,100,100);
-		var bmp = new h2d_Bitmap(tile,this.s2d);
-		bmp.posChanged = true;
-		bmp.x = 100;
-		bmp.posChanged = true;
-		bmp.y = 100;
-		bmp.addShader(shader);
 	}
 	,update: function(dt) {
 		this.frameRateLabel.set_text(Std.string(1.0 / dt));

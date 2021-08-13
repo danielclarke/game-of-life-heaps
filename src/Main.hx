@@ -61,7 +61,7 @@ class Main extends hxd.App {
     }
 
     override function init() {
-        updateRate = 6;
+        updateRate = 10;
         worldDim = 50;
         elapsedTime = 0;
         cellSize = 10;
@@ -72,18 +72,18 @@ class Main extends hxd.App {
         fateBuffer = [for(i in 0...worldDim) [for(j in 0...worldDim) 0]];
 
         // drawCreature([[1, 0, 1], [0, 1, 1], [0, 1, 0]], 10, 10);
-        // drawCreature([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], 10, 10);
-        // drawCreature([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], 10, 15);
-        // drawCreature([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], 10, 20);
+        drawCreature([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], 20, 10);
+        drawCreature([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], 30, 10);
+        drawCreature([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], 40, 10);
             
         frameRateLabel = new h2d.Text(hxd.res.DefaultFont.get(), s2d);
 
-        var shader = new MyShader();
-        var tile = h2d.Tile.fromColor(0x00FF00, 100, 100);
-        var bmp = new h2d.Bitmap(tile, s2d);
-        bmp.x = 100;
-        bmp.y = 100;
-        bmp.addShader(shader);
+        // var shader = new MyShader();
+        // var tile = h2d.Tile.fromColor(0x00FF00, 100, 100);
+        // var bmp = new h2d.Bitmap(tile, s2d);
+        // bmp.x = 100;
+        // bmp.y = 100;
+        // bmp.addShader(shader);
     }
 
     override function update(dt : Float) {
