@@ -1,3 +1,4 @@
+import hxd.Rand;
 import Game;
 
 class MyShader extends hxsl.Shader {
@@ -66,14 +67,22 @@ class Main extends hxd.App {
         updateRate = 24;
         elapsedTime = 0;
 
+        // var startingCells = [
+        //     {x:0, y:0},
+        //     {x:2, y:0},
+        //     {x:1, y:1},
+        //     {x:2, y:1},
+        //     {x:1, y:2},
+        // ];
+
+        var date = Date.now();
+        var rand = new Rand(date.getFullYear() + date.getMonth() + date.getDate() + date.getHours() + date.getMinutes() + date.getSeconds());
         var startingCells = [
-            {x:0, y:0},
-            {x:2, y:0},
-            {x:1, y:1},
-            {x:2, y:1},
-            {x:1, y:2},
+            for (_ in 0...500)
+            {x: rand.random(100) + 100, y: rand.random(100) + 75}
         ];
-        game = new Game(s2d, 500, startingCells);
+
+        game = new Game(s2d, startingCells);
             
         frameRateLabel = new h2d.Text(hxd.res.DefaultFont.get(), s2d);
 
