@@ -44,20 +44,22 @@ class Game {
     function updatePopulation() {
         populationMap.clear();
         for (cell in cellCache) {
-            var x = Std.int(cell.x / (cellSize + 1));
-            var y = Std.int(cell.y / (cellSize + 1));
-            for (i in [-1, 0, 1]) {
-                for (j in [-1, 0, 1]) {
-                    if (populationMap.get(x + i) == null) {
-                        populationMap[x + i] = new Map();
-                    }
-                    if (populationMap[x + i].get(y + j) == null) {
-                        populationMap[x + i][y + j] = [0, 0]; // {alive: 0, population: 0};
-                    }
-                    if (i == 0 && j == 0) {
-                        populationMap[x + i][y + j][0] = 1;
-                    } else {
-                        populationMap[x + i][y + j][1] += 1;
+            if (cell.alpha > 0) {
+                var x = Std.int(cell.x / (cellSize + 1));
+                var y = Std.int(cell.y / (cellSize + 1));
+                for (i in [-1, 0, 1]) {
+                    for (j in [-1, 0, 1]) {
+                        if (populationMap.get(x + i) == null) {
+                            populationMap[x + i] = new Map();
+                        }
+                        if (populationMap[x + i].get(y + j) == null) {
+                            populationMap[x + i][y + j] = [0, 0]; // {alive: 0, population: 0};
+                        }
+                        if (i == 0 && j == 0) {
+                            populationMap[x + i][y + j][0] = 1;
+                        } else {
+                            populationMap[x + i][y + j][1] += 1;
+                        }
                     }
                 }
             }
