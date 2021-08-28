@@ -77,11 +77,12 @@ class Main extends hxd.App {
 
         var date = Date.now();
         var rand = new Rand(date.getFullYear() + date.getMonth() + date.getDate() + date.getHours() + date.getMinutes() + date.getSeconds());
-        var startingCells = [
-            for (_ in 0...500)
-            {x: rand.random(100) + 100, y: rand.random(100) + 75}
-        ];
 
+        var spread = 100;
+        var everyCoord = [for (x in 0...spread) for (y in 0...spread) {x: x + 150, y: y + 75}];
+
+        rand.shuffle(everyCoord);
+        var startingCells = everyCoord.slice(0, 500);
         game = new Game(s2d, startingCells);
             
         frameRateLabel = new h2d.Text(hxd.res.DefaultFont.get(), s2d);
