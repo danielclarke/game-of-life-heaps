@@ -1,5 +1,3 @@
-import hxd.Rand;
-
 typedef Point = {x: Int, y: Int};
 
 class Game {
@@ -8,16 +6,18 @@ class Game {
     var aliveCells:Array<Point>;
     var cellCache:Array<h2d.Anim>;
     
+    var worldDim:Null<Int>;
     var tiles:Array<h2d.Tile>;
     var cellSize:Int;
     var updateRate:Float;
     var s2d:h2d.Scene;
 
-    public function new(s2d:h2d.Scene, startingCellPoints:Array<Point>) {
+    public function new(s2d:h2d.Scene, startingCellPoints:Array<Point>, ?worldDim:Int) {
         populationMap = new Map();
         cellCache = [];
         aliveCells = [];
 
+        this.worldDim = worldDim;
         cellSize = 2;
         updateRate = 6;
         this.s2d = s2d;
@@ -48,6 +48,18 @@ class Game {
         return '$x, $y';
     }
 
+    function getCoord(i: Int) {
+        if (worldDim != null) {
+            if (i < 0) {
+                i += worldDim;
+            }
+            if (i > worldDim) {
+                i -= worldDim;
+            }
+        }
+        return i;
+    }
+
     function updatePopulation() {
         populationMap.clear();
         for (cell in aliveCells) {
@@ -55,9 +67,11 @@ class Game {
             var y = cell.y;
             for (i in [-1, 0, 1]) {
                 for (j in [-1, 0, 1]) {
-                    var key = getKey(x + i, y + j);
+                    var u = getCoord(x + i);
+                    var v = getCoord(y + j);
+                    var key = getKey(u, v);
                     if (populationMap[key] == null) {
-                        populationMap[key] = [0, 0, x + i, y + j]; // {alive: 0, population: 0, x: x + i, y: y + j};
+                        populationMap[key] = [0, 0, u, v]; // {alive: 0, population: 0, x: u, y: v};
                     }
                     if (i == 0 && j == 0) {
                         populationMap[key][0] = 1;
