@@ -4,7 +4,8 @@ typedef Point = {x: Int, y: Int};
 
 class Game {
 
-    var populationMap:Map<Int, Map<Int, Array<Int>>>;
+    var populationMap:Map<String, Array<Int>>;
+    var aliveCells:Array<Point>;
     var cellCache:Array<h2d.Anim>;
     
     var tiles:Array<h2d.Tile>;
@@ -15,6 +16,7 @@ class Game {
     public function new(s2d:h2d.Scene, startingCellPoints:Array<Point>) {
         populationMap = new Map();
         cellCache = [];
+        aliveCells = [];
 
         cellSize = 2;
         updateRate = 6;
@@ -25,6 +27,7 @@ class Game {
 
         for (point in startingCellPoints) {
             cellCache.push(initCell(point.x, point.y));
+            aliveCells.push(point);
         }
     }
 
@@ -41,25 +44,25 @@ class Game {
         return anim;
     }
 
+    function getKey(x: Int, y: Int) {
+        return '$x, $y';
+    }
+
     function updatePopulation() {
         populationMap.clear();
-        for (cell in cellCache) {
-            if (cell.alpha > 0) {
-                var x = Std.int(cell.x / (cellSize + 1));
-                var y = Std.int(cell.y / (cellSize + 1));
-                for (i in [-1, 0, 1]) {
-                    for (j in [-1, 0, 1]) {
-                        if (populationMap.get(x + i) == null) {
-                            populationMap[x + i] = new Map();
-                        }
-                        if (populationMap[x + i].get(y + j) == null) {
-                            populationMap[x + i][y + j] = [0, 0]; // {alive: 0, population: 0};
-                        }
-                        if (i == 0 && j == 0) {
-                            populationMap[x + i][y + j][0] = 1;
-                        } else {
-                            populationMap[x + i][y + j][1] += 1;
-                        }
+        for (cell in aliveCells) {
+            var x = cell.x;
+            var y = cell.y;
+            for (i in [-1, 0, 1]) {
+                for (j in [-1, 0, 1]) {
+                    var key = getKey(x + i, y + j);
+                    if (populationMap[key] == null) {
+                        populationMap[key] = [0, 0, x + i, y + j]; // {alive: 0, population: 0, x: x + i, y: y + j};
+                    }
+                    if (i == 0 && j == 0) {
+                        populationMap[key][0] = 1;
+                    } else {
+                        populationMap[key][1] += 1;
                     }
                 }
             }
@@ -68,24 +71,26 @@ class Game {
 
     function updateAlive() {
         var cellCount = 0;
-        for (x in populationMap.keys()) {
-            for (y in populationMap[x].keys()) {
-                var alive = switch populationMap[x][y] {
-                    case [_, 3]: true;
-                    case [1, 2]: true;
-                    case _: false;
+        aliveCells = [];
+        for (d in populationMap) {
+            var alive = switch d {
+                case [_, 3, _, _]: true;
+                case [1, 2, _, _]: true;
+                case _: false;
+            }
+            if (alive) {
+                var x = d[2];
+                var y = d[3];
+                if (cellCount >= cellCache.length) {
+                    cellCache.push(initCell(x, y));
+                } else {
+                    var cell = cellCache[cellCount];
+                    cell.x = x * (cellSize + 1);
+                    cell.y = y * (cellSize + 1);
+                    cell.alpha = 1;
                 }
-                if (alive) {
-                    if (cellCount >= cellCache.length) {
-                        cellCache.push(initCell(x, y));
-                    } else {
-                        var cell = cellCache[cellCount];
-                        cell.x = x * (cellSize + 1);
-                        cell.y = y * (cellSize + 1);
-                        cell.alpha = 1;
-                    }
-                    cellCount += 1;
-                }
+                aliveCells.push({x: x, y: y});
+                cellCount += 1;
             }
         }
         for (i in cellCount + 1 ... cellCache.length) {
